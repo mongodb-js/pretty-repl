@@ -1,6 +1,7 @@
 {
   "name": "pretty-repl",
-  "version": "1.0.1",
+  "keywords": ["repl", "syntax highlighting", "colors", "cli"],
+  "version": "1.0.2",
   "description": "Extends repl.REPLServer to allow for a colorize function",
   "main": "index.js",
   "engines" : { "node" : ">=13" },
