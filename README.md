@@ -2,7 +2,7 @@
 
 An extension of the Node REPL (`repl.REPLServer`) that applies syntax highlighting as the user types.
 
-![Pretty REPL Screenshot](images/screenshot.png)
+![Pretty REPL Screenshot](./images/screenshot.png)
 
 ## How to use it
 
