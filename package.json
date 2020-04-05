@@ -1,0 +1,14 @@
+{
+  "name": "pretty-repl",
+  "version": "1.0.0",
+  "description": "Extends repl.REPLServer to allow for a colorize function",
+  "main": "index.js",
+  "engines" : { "node" : ">=13" },
+  "author": "Massimiliano Marcon <me@marcon.me>",
+  "license": "MIT",
+  "dependencies": {
+    "ansi": "^0.3.1",
+    "chalk": "^4.0.0",
+    "emphasize": "^3.0.0"
+  }
+}
