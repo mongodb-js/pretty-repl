@@ -6,11 +6,11 @@
     "colors",
     "cli"
   ],
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Extends repl.REPLServer to allow for a colorize function",
   "main": "index.js",
   "engines": {
-    "node": ">=13"
+    "node": ">=11"
   },
   "author": "Massimiliano Marcon <me@marcon.me>",
   "license": "MIT",
