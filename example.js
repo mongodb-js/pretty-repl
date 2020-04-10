@@ -1,7 +1,7 @@
-const PrettyREPLServer = require('.');
+const repl = require('.');
 
 const options = {
-    prompt: '→ '
+  prompt: '→ '
 };
 
-new PrettyREPLServer(options);
+repl.start(options);

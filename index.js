@@ -1,61 +1,14 @@
-const repl = require('repl');
-const highlight = require('./lib/highlight');
-const ansi = require('ansi');
+const semver = require('semver');
 
-class PrettyREPLServer extends repl.REPLServer {
+// Functions that return the right implementation
+// depending on the node version.
+// They are functions rather than variables because we
+// only want to execute the require if that's the right version to load.
+// This way, we don't monkey-patch the Interface prototype of the readline
+// module for nothing.
+const prettyReplUnsupported = () => require('repl');
+const prettyReplNode12 = () => require('./lib/pretty-repl-compat');
+const prettyRepl = () => require('./lib/pretty-repl');
 
-    constructor(options) {
-        super(options);
-        this.colorize = (options && options.colorize) || function (str) {
-            return highlight(str);
-        };
-        options.output = options.output || process.stdout;
-
-        this.ansiCursor = ansi(options.output);
-    }
-
-    _writeToOutput(stringToWrite) {
-        if (stringToWrite === '\r\n' || stringToWrite === ' ') {
-            this.output.write(stringToWrite);
-            return;
-        }
-        if (!stringToWrite) return;
-
-        const startsWithPrompt = stringToWrite.indexOf(this._prompt) === 0;
-        if (startsWithPrompt) {
-            this.output.write(this._prompt);
-            stringToWrite = stringToWrite.substring(this._prompt.length);
-            this.renderCurrentLine(stringToWrite);
-        } else {
-            super._writeToOutput(stringToWrite);
-        }
-    }
-
-    _insertString (c) {
-        if (this.cursor < this.line.length) {
-            const beg = this.line.slice(0, this.cursor);
-            const end = this.line.slice(this.cursor, this.line.length);
-            this.line = beg + c + end;
-            this.cursor += c.length;
-            this._refreshLine();
-        } else {
-            this.line += c;
-            this.cursor += c.length;
-            this._refreshLine();
-            this._moveCursor(0);
-        }
-    }
-
-    renderCurrentLine(stringToWrite) {
-        if(!this.ansiCursor) {
-            return;
-        }
-        const promptLength = this._prompt.length;
-        const cursorPos = this._getCursorPos();
-        const nX = cursorPos.cols;
-        this.ansiCursor.horizontalAbsolute(promptLength + 1).eraseLine().write(this.colorize(stringToWrite));
-        this.ansiCursor.horizontalAbsolute(nX);
-    }
-}
-
-module.exports = PrettyREPLServer;
+module.exports = semver.lt(process.version, '11.0.0') ? prettyReplUnsupported()
+  : semver.lt(process.version, '13.0.0') ? prettyReplNode12() : prettyRepl();
