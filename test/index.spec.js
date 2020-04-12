@@ -35,7 +35,7 @@ test('applies colors when necesssary', t => {
       if (nodeMajorVersion() >= 11) {
         return t.equal(out, 'test-prompt > <color>const</color> foo = 12\n', 'output is colored');
       }
-      t.equal(out, 'test-prompt > const foo = 12\n', 'output is node colored (node version is too old)');
+      t.equal(out, 'test-prompt > const foo = 12\n', 'output is not colored (node version is too old)');
     }
   });
   prettyRepl._writeToOutput('test-prompt > const foo = 12\n');
