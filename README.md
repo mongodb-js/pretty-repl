@@ -1,5 +1,7 @@
 # Pretty REPL
 
+![Node.js CI](https://github.com/mmarcon/pretty-repl/workflows/Node.js%20CI/badge.svg)
+
 An extension of the Node REPL (`repl.REPLServer`) that applies syntax highlighting as the user types.
 
 ![Pretty REPL Screenshot](./images/screenshot.png)
