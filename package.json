@@ -12,6 +12,9 @@
   "engines": {
     "node": ">=11"
   },
+  "scripts": {
+    "test": "node ./test/index.spec.js | tap-spec"
+  },
   "author": "Massimiliano Marcon <me@marcon.me>",
   "license": "MIT",
   "repository": "github:mmarcon/pretty-repl",
@@ -22,6 +25,9 @@
     "semver": "^7.2.2"
   },
   "devDependencies": {
-    "semistandard": "^14.2.0"
+    "semistandard": "^14.2.0",
+    "stdio-mock": "^1.1.0",
+    "tap-spec": "^5.0.0",
+    "tape": "^4.13.2"
   }
 }
