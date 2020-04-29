@@ -1,6 +1,6 @@
 const test = require('tape');
 const { stdio } = require('stdio-mock');
-const repl = require('..');
+const decache = require('decache');
 
 const nodeMajorVersion = () => {
   const versionMatcher = process.version.match(/^v(\d{1,2})\.\d{1,2}\.\d{1,2}$/);
@@ -9,6 +9,8 @@ const nodeMajorVersion = () => {
 
 test('loads the right module for the version of node', t => {
   t.plan(1);
+  process.stdout.isTTY = true;
+  const repl = require('..');
   const major = nodeMajorVersion();
   if (major >= 13) {
     t.ok(repl._moduleLoaded.endsWith('pretty-repl.js'), 'pretty-repl loaded');
@@ -17,10 +19,35 @@ test('loads the right module for the version of node', t => {
   } else {
     t.notOk(repl._moduleLoaded, 'pretty-repl not loaded (old version of node)');
   }
+  decache('..');
+});
+
+test('does not apply colors when not TTY', t => {
+  t.plan(1);
+  process.stdout.isTTY = undefined;
+  const repl = require('..');
+  const { stdin, stdout } = stdio();
+  const prettyRepl = repl.start({
+    prompt: 'test-prompt > ',
+    input: stdin,
+    output: stdout,
+    colorize: str => str.replace(/const/, '<color>const</color>')
+  });
+  let out = '';
+  stdout.on('data', data => {
+    out += data;
+    if (out.endsWith('\n')) {
+      t.equal(out, 'test-prompt > const foo = 12\n', 'output is not colored');
+    }
+  });
+  prettyRepl._writeToOutput('test-prompt > const foo = 12\n');
+  decache('..');
 });
 
 test('applies colors when necesssary', t => {
   t.plan(1);
+  process.stdout.isTTY = true;
+  const repl = require('..');
   const { stdin, stdout } = stdio();
   const prettyRepl = repl.start({
     prompt: 'test-prompt > ',
@@ -39,10 +66,13 @@ test('applies colors when necesssary', t => {
     }
   });
   prettyRepl._writeToOutput('test-prompt > const foo = 12\n');
+  decache('..');
 });
 
 test('does not apply colors when not necesssary', t => {
   t.plan(1);
+  process.stdout.isTTY = true;
+  const repl = require('..');
   const { stdin, stdout } = stdio();
   const prettyRepl = repl.start({
     prompt: 'test-prompt > ',
@@ -58,4 +88,5 @@ test('does not apply colors when not necesssary', t => {
     }
   });
   prettyRepl._writeToOutput('test-prompt > let foo = 12\n');
+  decache('..');
 });

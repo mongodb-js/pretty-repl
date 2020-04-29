@@ -10,5 +10,5 @@ const prettyReplUnsupported = () => require('repl');
 const prettyReplNode12 = () => require('./lib/pretty-repl-compat');
 const prettyRepl = () => require('./lib/pretty-repl');
 
-module.exports = semver.lt(process.version, '11.0.0') ? prettyReplUnsupported()
+module.exports = (process.stdout.isTTY !== true || semver.lt(process.version, '11.0.0')) ? prettyReplUnsupported()
   : semver.lt(process.version, '13.0.0') ? prettyReplNode12() : prettyRepl();
