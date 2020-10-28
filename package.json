@@ -6,7 +6,7 @@
     "colors",
     "cli"
   ],
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Extends repl.REPLServer to allow for a colorize function",
   "main": "index.js",
   "engines": {
