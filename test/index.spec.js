@@ -1,34 +1,12 @@
 const test = require('tape');
 const { stdio } = require('stdio-mock');
-const decache = require('decache');
 const { PassThrough } = require('stream');
-
-const nodeMajorVersion = () => {
-  const versionMatcher = process.version.match(/^v(\d{1,2})\.\d{1,2}\.\d{1,2}$/);
-  return parseInt(versionMatcher && versionMatcher[1], 10);
-};
-
-test('loads the right module for the version of node', t => {
-  t.plan(1);
-  process.stdout.isTTY = true;
-  const repl = require('..');
-  const major = nodeMajorVersion();
-  const { stdin, stdout } = stdio();
-  const prettyRepl = repl.start({ input: stdin, output: stdout, terminal: true });
-  if (major >= 13) {
-    t.ok(prettyRepl.__prettyModuleLoaded.endsWith('pretty-repl.js'), 'pretty-repl loaded');
-  } else if (major < 13 && major >= 11) {
-    t.ok(prettyRepl.__prettyModuleLoaded.endsWith('pretty-repl-compat.js'), 'pretty-repl-compat (compatibility mode for old node versions) loaded');
-  } else {
-    t.notOk(prettyRepl.__prettyModuleLoaded, 'pretty-repl not loaded (old version of node)');
-  }
-  decache('..');
-});
+const repl = require('..');
+const memoizeStringTransformerMethod = require('../lib/memoize-string-transformer');
 
 test('does not apply colors when not TTY', t => {
   t.plan(1);
   process.stdout.isTTY = undefined;
-  const repl = require('..');
   const { stdin, stdout } = stdio();
   const prettyRepl = repl.start({
     prompt: 'test-prompt > ',
@@ -44,13 +22,11 @@ test('does not apply colors when not TTY', t => {
     }
   });
   prettyRepl._writeToOutput('test-prompt > const foo = 12\n');
-  decache('..');
 });
 
 test('applies colors when necesssary', t => {
   t.plan(1);
   process.stdout.isTTY = true;
-  const repl = require('..');
   const { stdin, stdout } = stdio();
   const prettyRepl = repl.start({
     prompt: 'test-prompt > ',
@@ -63,20 +39,15 @@ test('applies colors when necesssary', t => {
   stdout.on('data', data => {
     out += data;
     if (out.endsWith('\n')) {
-      if (nodeMajorVersion() >= 11) {
-        return t.equal(out, 'test-prompt > <color>const</color> foo = 12\n', 'output is colored');
-      }
-      t.equal(out, 'test-prompt > const foo = 12\n', 'output is not colored (node version is too old)');
+      return t.equal(out, 'test-prompt > <color>const</color> foo = 12\n', 'output is colored');
     }
   });
   prettyRepl._writeToOutput('test-prompt > const foo = 12\n');
-  decache('..');
 });
 
 test('does not apply colors when not necesssary', t => {
   t.plan(1);
   process.stdout.isTTY = true;
-  const repl = require('..');
   const { stdin, stdout } = stdio();
   const prettyRepl = repl.start({
     prompt: 'test-prompt > ',
@@ -92,15 +63,11 @@ test('does not apply colors when not necesssary', t => {
     }
   });
   prettyRepl._writeToOutput('test-prompt > let foo = 12\n');
-  decache('..');
 });
 
-test('picks colors independently of stdio', {
-  skip: nodeMajorVersion() < 12
-}, t => {
+test('picks colors independently of stdio', t => {
   t.plan(1);
   process.stdout.isTTY = undefined;
-  const repl = require('..');
   const { stdin } = stdio();
   const output = new PassThrough();
   output.isTTY = true;
@@ -118,5 +85,66 @@ test('picks colors independently of stdio', {
     }
   });
   prettyRepl._writeToOutput('test-prompt > let foo = 12\n');
-  decache('..');
+});
+
+test('memoizeStringTransformerMethod', t => {
+  t.plan(6);
+  let i = 0;
+  const cachedFn = memoizeStringTransformerMethod(3, (str) => {
+    // Intentionally use something that depends on external state to test
+    // the caching functionality.
+    return `${i++}: ${str}`;
+  });
+  t.equal(cachedFn('foo'), '0: foo');
+  t.equal(cachedFn('foo'), '0: foo');
+  t.equal(cachedFn('bar'), '1: bar');
+  t.equal(cachedFn('baz'), '2: baz');
+  t.equal(cachedFn('qux'), '3: qux');
+  t.equal(cachedFn('foo'), '4: foo');
+});
+
+test('stripCompleteJSStructures', t => {
+  t.plan(6);
+  const { stdin } = stdio();
+  const output = new PassThrough();
+  output.isTTY = true;
+  output.getColorDepth = () => 8;
+  const prettyRepl = repl.start({
+    input: stdin,
+    output: output
+  });
+  t.equal(prettyRepl._stripCompleteJSStructures('{a: (x) => x.y = 1}'), '');
+  t.equal(prettyRepl._stripCompleteJSStructures('{x} `${unfinished'), ' `${unfinished');
+  t.equal(prettyRepl._stripCompleteJSStructures('{(x}'), '{(x}');
+  t.equal(prettyRepl._stripCompleteJSStructures(String.raw `"abc\"def"`), '');
+  t.equal(prettyRepl._stripCompleteJSStructures(String.raw `"abc\\"def"`), 'def"');
+  t.equal(prettyRepl._stripCompleteJSStructures(String.raw `"a\\\\bc\\"def"`), 'def"');
+});
+
+test('full pass-through test', t => {
+  t.plan(1);
+  process.stdout.isTTY = undefined;
+  const input = new PassThrough();
+  const output = new PassThrough();
+  output.isTTY = true;
+  output.getColorDepth = () => 8;
+  const prettyRepl = repl.start({
+    prompt: 'test-prompt > ',
+    input: input,
+    output: output,
+    terminal: true
+  });
+  let out = '';
+  output.setEncoding('utf8').on('data', data => {
+    out += data;
+    if (out.endsWith('\n') && !out.startsWith('<done>')) {
+      if (process.platform === 'win32') {
+        t.equal(out, '\x1b[1G\x1b[0Jtest-prompt > \x1b[15Gle\b\b\x1b[32mlet\x1b[39m foo = \x1b[33m1\x1b[39m\x1b[33m2\x1b[39m\r\n');
+      } else {
+        t.equal(out, '\x1b[1G\x1b[0Jtest-prompt > \x1b[15Gle\b\b\x1b[32mlet\x1b[39m foo = \x1b[34m1\x1b[39m\x1b[34m2\x1b[39m\r\n');
+      }
+      out = '<done>';
+    }
+  });
+  input.write('let foo = 12\n');
 });
