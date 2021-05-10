@@ -104,7 +104,7 @@ test('memoizeStringTransformerMethod', t => {
 });
 
 test('stripCompleteJSStructures', t => {
-  t.plan(6);
+  t.plan(10);
   const { stdin } = stdio();
   const output = new PassThrough();
   output.isTTY = true;
@@ -119,6 +119,10 @@ test('stripCompleteJSStructures', t => {
   t.equal(prettyRepl._stripCompleteJSStructures(String.raw `"abc\"def"`), '');
   t.equal(prettyRepl._stripCompleteJSStructures(String.raw `"abc\\"def"`), 'def"');
   t.equal(prettyRepl._stripCompleteJSStructures(String.raw `"a\\\\bc\\"def"`), 'def"');
+  t.equal(prettyRepl._stripCompleteJSStructures('(function {}'), '(function ');
+  t.equal(prettyRepl._stripCompleteJSStructures('(function() {'), '(function() {');
+  t.equal(prettyRepl._stripCompleteJSStructures('(function() => {'), '(function() => {');
+  t.equal(prettyRepl._stripCompleteJSStructures('(function() => {}'), '(function => ');
 });
 
 test('full pass-through test', t => {
