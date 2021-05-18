@@ -142,11 +142,7 @@ test('full pass-through test', t => {
   output.setEncoding('utf8').on('data', data => {
     out += data;
     if (out.endsWith('\n') && !out.startsWith('<done>')) {
-      if (process.platform === 'win32') {
-        t.equal(out, '\x1b[1G\x1b[0Jtest-prompt > \x1b[15Gle\b\b\x1b[32mlet\x1b[39m foo = \x1b[33m1\x1b[39m\x1b[33m2\x1b[39m\r\n');
-      } else {
-        t.equal(out, '\x1b[1G\x1b[0Jtest-prompt > \x1b[15Gle\b\b\x1b[32mlet\x1b[39m foo = \x1b[34m1\x1b[39m\x1b[34m2\x1b[39m\r\n');
-      }
+      t.equal(out, '\x1b[1G\x1b[0Jtest-prompt > \x1b[15Gle\b\b\x1b[36mlet\x1b[39m foo = \x1b[33m1\x1b[39m\x1b[33m2\x1b[39m\r\n');
       out = '<done>';
     }
   });
