@@ -125,6 +125,28 @@ test('stripCompleteJSStructures', t => {
   t.equal(prettyRepl._stripCompleteJSStructures('(function() => {}'), '(function => ');
 });
 
+test('findMatchingBracket', t => {
+  t.plan(10);
+  const { stdin } = stdio();
+  const output = new PassThrough();
+  output.isTTY = true;
+  output.getColorDepth = () => 8;
+  const prettyRepl = repl.start({
+    input: stdin,
+    output: output
+  });
+  t.equal(prettyRepl._findMatchingBracket('abc { def }', 4), 10);
+  t.equal(prettyRepl._findMatchingBracket('abc { def }', 10), 4);
+  t.equal(prettyRepl._findMatchingBracket('abc {( def }', 4), 11);
+  t.equal(prettyRepl._findMatchingBracket('abc {( def }', 5), -1);
+  t.equal(prettyRepl._findMatchingBracket('abc {( def }', 0), -1);
+  t.equal(prettyRepl._findMatchingBracket('abc {( def }', 11), 4);
+  t.equal(prettyRepl._findMatchingBracket('"(")', 0), 2);
+  t.equal(prettyRepl._findMatchingBracket('"(")', 1), -1);
+  t.equal(prettyRepl._findMatchingBracket('`${foo}`', 1), 6);
+  t.equal(prettyRepl._findMatchingBracket('(`${")"}`', 0), -1);
+});
+
 test('full pass-through test', t => {
   t.plan(1);
   process.stdout.isTTY = undefined;
