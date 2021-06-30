@@ -39,11 +39,8 @@ Additionally, it's possible to pass an additional `colorize` property to the opt
 }
 ```
 
-## Known issues
-
-* The implementation in Node.js versions 11 and 12, this module works by monkey-patching the Interface prototype (`readline` module).
-If you use `readline` (or a module that depends on it) somewhere else, you may want to test everything thoroughly. In theory, there should be no side effects.
-* For Node.js versions older than 11, this module does nothing.
+In order to highlighting matching pairs of brackets, a `colorizeMatchingBracket`
+is also available.
 
 ## Credits
 
