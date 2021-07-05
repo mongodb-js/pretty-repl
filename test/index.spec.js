@@ -104,7 +104,7 @@ test('memoizeStringTransformerMethod', t => {
 });
 
 test('stripCompleteJSStructures', t => {
-  t.plan(10);
+  t.plan(11);
   const { stdin } = stdio();
   const output = new PassThrough();
   output.isTTY = true;
@@ -123,6 +123,7 @@ test('stripCompleteJSStructures', t => {
   t.equal(prettyRepl._stripCompleteJSStructures('(function() {'), '(function() {');
   t.equal(prettyRepl._stripCompleteJSStructures('(function() => {'), '(function() => {');
   t.equal(prettyRepl._stripCompleteJSStructures('(function() => {}'), '(function => ');
+  t.equal(prettyRepl._stripCompleteJSStructures('a.b([{x:{y: {z:[0, 10]}}}, {p:"$x"},{q'), 'a.b([, ,{q');
 });
 
 test('findMatchingBracket', t => {
