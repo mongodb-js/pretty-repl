@@ -19,9 +19,9 @@
   "license": "MIT",
   "repository": "github:mmarcon/pretty-repl",
   "dependencies": {
-    "ansi-regex": "^5.0.0",
+    "ansi-regex": "^5.0.1",
     "chalk": "^4.1.1",
-    "emphasize": "^3.0.0",
+    "emphasize": "^4.2.0",
     "strip-ansi": "^6.0.0"
   },
   "devDependencies": {
