@@ -10,19 +10,14 @@
   "description": "Extends repl.REPLServer to allow for a colorize function",
   "main": "index.js",
   "engines": {
-    "node": ">=12"
+    "node": ">=11"
   },
   "scripts": {
-    "lint": "eslint .",
-    "depcheck": "depcheck",
-    "check": "npm run depcheck && npm run lint",
-    "test": "mocha test/*.spec.js",
-    "release": "release-it"
+    "test": "node ./test/index.spec.js | tap-spec"
   },
-  "files": ["lib", "index.js", "index.d.ts"],
   "author": "Massimiliano Marcon <me@marcon.me>",
   "license": "MIT",
-  "repository": "https://github.com/mongodb-js/pretty-repl",
+  "repository": "github:mmarcon/pretty-repl",
   "dependencies": {
     "ansi-regex": "^5.0.0",
     "chalk": "^4.1.1",
@@ -30,10 +25,9 @@
     "strip-ansi": "^6.0.0"
   },
   "devDependencies": {
-    "depcheck": "^1.4.3",
-    "eslint-config-mongodb-js": "^5.0.3",
-    "mocha": "^10.2.0",
-    "release-it": "^15.11.0",
-    "stdio-mock": "^1.1.0"
+    "semistandard": "^14.2.0",
+    "stdio-mock": "^1.1.0",
+    "tap-spec": "^5.0.0",
+    "tape": "^4.13.2"
   }
 }

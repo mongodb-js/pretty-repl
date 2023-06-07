@@ -10,7 +10,8 @@ const prettyRepl = () => require('./lib/pretty-repl');
 const impl = (tty) => !tty ? prettyReplUnsupported() : prettyRepl();
 
 function isReplTerminal(options) {
-  if (options.terminal !== undefined) {return options.terminal;}
+  if (options.terminal !== undefined)
+    return options.terminal;
   return (options.output || process.stdout).isTTY;
 }
 
