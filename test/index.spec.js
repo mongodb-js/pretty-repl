@@ -170,3 +170,28 @@ it('full pass-through test', (done) => {
   });
   input.write('let foo = 12\n');
 });
+
+it('highlights typescript', (done) => {
+  process.stdout.isTTY = undefined;
+  const input = new PassThrough();
+  const output = new PassThrough();
+  output.isTTY = true;
+  output.getColorDepth = () => 8;
+  repl.start({
+    prompt: 'test-prompt > ',
+    input: input,
+    output: output,
+    terminal: true,
+    language: 'ts'
+  });
+  let out = '';
+  output.setEncoding('utf8').on('data', data => {
+    out += data;
+    if (out.endsWith('\n') && !out.startsWith('<done>')) {
+      assert.equal(out, '\x1B[1G\x1B[0Jtest-prompt > \x1B[15Gtyp\b\b\b\x1B[36mtype\x1B[39m metastatic = \x1B[32m"\x1B[39m\x1B[32mf\x1B[39m\x1B[32mo\x1B[39m\x1B[32mo\x1B[39m\x1B[32m"\x1B[39m|\x1B[32m"\x1B[39m\x1B[32mb\x1B[39m\x1B[32ma\x1B[39m\x1B[32mr\x1B[39m\x1B[32m"\x1B[39m|\x1B[32m"\x1B[39m\x1B[32mb\x1B[39m\x1B[32ma\x1B[39m\x1B[32mz\x1B[39m\x1B[32m"\x1B[39m\r\n');
+      out = '<done>';
+      done();
+    }
+  });
+  input.write('type metastatic = "foo"|"bar"|"baz"\n');
+});
