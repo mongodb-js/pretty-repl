@@ -1,9 +1,15 @@
 const { stdio } = require('stdio-mock');
 const { PassThrough } = require('stream');
 const assert = require('assert');
+const stripAnsi = require('strip-ansi');
 
 const repl = require('..');
 const memoizeStringTransformerMethod = require('../lib/memoize-string-transformer');
+
+function isMultilineSymbol(prettyRepl) {
+  return Object.getOwnPropertySymbols(prettyRepl)
+    .find(symbol => symbol.description === '_isMultiline');
+}
 
 it('does not apply colors when not TTY', (done) => {
   process.stdout.isTTY = undefined;
@@ -147,37 +153,11 @@ it('findMatchingBracket', () => {
   assert.equal(prettyRepl._findMatchingBracket('(`${")"}`', 0), -1);
 });
 
-it('translates matching bracket positions for multiline refresh chunks', () => {
+it('highlights a continuation-line bracket through the real refresh path', () => {
   const { stdin } = stdio();
   const output = new PassThrough();
   output.isTTY = true;
-  output.getColorDepth = () => 8;
-  const prettyRepl = repl.start({
-    prompt: '> ',
-    input: stdin,
-    output: output,
-    terminal: true,
-    colorize: str => str,
-    colorizeMatchingBracket: bracket => `<b>${bracket}</b>`
-  });
-
-  prettyRepl.line = 'db.getCollection(\n"stats")';
-  prettyRepl.highlightBracketPosition = 16;
-  prettyRepl._multilineChunkIndex = 0;
-  prettyRepl._writeToOutput('> db.getCollection(');
-  assert.equal(prettyRepl.highlightBracketPosition, 16);
-
-  prettyRepl._multilineChunkIndex = 1;
-  prettyRepl.highlightBracketPosition = 16;
-  prettyRepl._writeToOutput('\n| "stats")');
-
-  assert.equal(prettyRepl.highlightBracketPosition, 16);
-});
-
-it('highlights continuation-line brackets without shifting offsets', () => {
-  const { stdin } = stdio();
-  const output = new PassThrough();
-  output.isTTY = true;
+  output.columns = 80;
   output.getColorDepth = () => 8;
   let written = '';
   output.setEncoding('utf8').on('data', chunk => {
@@ -192,12 +172,49 @@ it('highlights continuation-line brackets without shifting offsets', () => {
     colorizeMatchingBracket: bracket => `<b>${bracket}</b>`
   });
 
+  const multiline = isMultilineSymbol(prettyRepl);
+  assert.ok(multiline, 'Node REPL exposes its multiline state');
   prettyRepl.line = 'db.getCollection(\n"stats")';
-  prettyRepl.highlightBracketPosition = 25;
-  prettyRepl._multilineChunkIndex = 1;
-  prettyRepl._writeToOutput('\n| "stats")');
+  prettyRepl.cursor = prettyRepl.line.indexOf('"');
+  prettyRepl[multiline] = true;
 
-  assert.match(written, /\n\| "stats"<b>\)<\/b>$/);
+  written = '';
+  prettyRepl._refreshLine();
+
+  assert.equal(
+    stripAnsi(written),
+    '> db.getCollection(\n| "stats<b>"</b>)'
+  );
+});
+
+it('highlights continuation-line brackets without shifting offsets', async () => {
+  const input = new PassThrough();
+  const output = new PassThrough();
+  output.isTTY = true;
+  output.columns = 80;
+  output.getColorDepth = () => 8;
+  let written = '';
+  output.setEncoding('utf8').on('data', chunk => {
+    written += chunk;
+  });
+  repl.start({
+    prompt: '> ',
+    input,
+    output: output,
+    terminal: true,
+    colorize: str => str,
+    colorizeMatchingBracket: bracket => `<b>${bracket}</b>`
+  });
+
+  input.write('db.getCollection("stats").aggregate([{$sort: {_id:-139m}},{$limit: 100},{}])');
+  written = '';
+  input.write('\x1b[D');
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(
+    stripAnsi(written),
+    '> db.getCollection("stats").aggregate<b>(</b>[{$sort: {_id:-139m}},{$limit: 100},{}])'
+  );
 });
 
 it('full pass-through test', (done) => {
