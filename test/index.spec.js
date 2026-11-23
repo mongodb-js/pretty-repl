@@ -147,6 +147,59 @@ it('findMatchingBracket', () => {
   assert.equal(prettyRepl._findMatchingBracket('(`${")"}`', 0), -1);
 });
 
+it('translates matching bracket positions for multiline refresh chunks', () => {
+  const { stdin } = stdio();
+  const output = new PassThrough();
+  output.isTTY = true;
+  output.getColorDepth = () => 8;
+  const prettyRepl = repl.start({
+    prompt: '> ',
+    input: stdin,
+    output: output,
+    terminal: true,
+    colorize: str => str,
+    colorizeMatchingBracket: bracket => `<b>${bracket}</b>`
+  });
+
+  prettyRepl.line = 'db.getCollection(\n"stats")';
+  prettyRepl.highlightBracketPosition = 16;
+  prettyRepl._multilineChunkIndex = 0;
+  prettyRepl._writeToOutput('> db.getCollection(');
+  assert.equal(prettyRepl.highlightBracketPosition, 16);
+
+  prettyRepl._multilineChunkIndex = 1;
+  prettyRepl.highlightBracketPosition = 16;
+  prettyRepl._writeToOutput('\n| "stats")');
+
+  assert.equal(prettyRepl.highlightBracketPosition, 16);
+});
+
+it('highlights continuation-line brackets without shifting offsets', () => {
+  const { stdin } = stdio();
+  const output = new PassThrough();
+  output.isTTY = true;
+  output.getColorDepth = () => 8;
+  let written = '';
+  output.setEncoding('utf8').on('data', chunk => {
+    written += chunk;
+  });
+  const prettyRepl = repl.start({
+    prompt: '> ',
+    input: stdin,
+    output: output,
+    terminal: true,
+    colorize: str => str,
+    colorizeMatchingBracket: bracket => `<b>${bracket}</b>`
+  });
+
+  prettyRepl.line = 'db.getCollection(\n"stats")';
+  prettyRepl.highlightBracketPosition = 25;
+  prettyRepl._multilineChunkIndex = 1;
+  prettyRepl._writeToOutput('\n| "stats")');
+
+  assert.match(written, /\n\| "stats"<b>\)<\/b>$/);
+});
+
 it('full pass-through test', (done) => {
   process.stdout.isTTY = undefined;
   const input = new PassThrough();
