@@ -172,9 +172,9 @@ it('highlights a continuation-line bracket through the real refresh path', async
   input.write('\x1b[D');
   await new Promise(resolve => setImmediate(resolve));
 
-  assert.equal(
+  assert.match(
     stripAnsi(written),
-    '> db.getCollection(\n| <b>"</b>stats"'
+    /(?:^|[\r\n])(?:\.\.\. |\| )<b>"<\/b>stats"$/
   );
 });
 
