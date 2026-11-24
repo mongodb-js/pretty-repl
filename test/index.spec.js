@@ -163,7 +163,7 @@ it('highlights a continuation-line bracket through the real refresh path', async
     input,
     output: output,
     terminal: true,
-    colorize: str => str,
+    colorize: str => str.replace(/stats/g, '<c>stats</c>'),
     colorizeMatchingBracket: bracket => `<b>${bracket}</b>`
   });
 
@@ -174,7 +174,7 @@ it('highlights a continuation-line bracket through the real refresh path', async
 
   assert.match(
     stripAnsi(written),
-    /(?:^|[\r\n])(?:\.\.\. |\| )<b>"<\/b>stats"$/
+    /(?:^|[\r\n])(?:\.\.\. |\| )<b>"<\/b><c>stats<\/c>"$/
   );
 });
 
