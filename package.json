@@ -17,7 +17,7 @@
     "depcheck": "depcheck",
     "check": "npm run depcheck && npm run lint",
     "test": "mocha test/*.spec.js",
-    "release": "release-it"
+    "bump-packages": "bump-monorepo-packages"
   },
   "files": [
     "lib",
@@ -34,10 +34,10 @@
     "strip-ansi": "^6.0.0"
   },
   "devDependencies": {
+    "@mongodb-js/monorepo-tools": "^1.6.0",
     "depcheck": "^1.4.3",
     "eslint": "^8.42.0",
     "mocha": "^10.2.0",
-    "release-it": "^15.11.0",
     "stdio-mock": "^1.1.0"
   }
 }

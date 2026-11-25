@@ -1,0 +1,70 @@
+# Publishes the package to npm after the Bump packages workflow lands a version
+# bump on main and Check and Test passes on it, mirroring devtools-shared's
+# publish-packages.yaml. The vX.Y.Z tag is pushed after a successful publish.
+#
+# Authentication is npm trusted publishing (OIDC), so there is no NPM_TOKEN.
+name: Release
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['Check and Test']
+    branches: [main]
+    types:
+      - completed
+
+permissions:
+  contents: none # we use the github app's token to checkout and push
+  id-token: write # required for npm trusted publishing
+
+concurrency:
+  group: release
+
+jobs:
+  publish:
+    name: Publish to npm
+
+    if: |
+      github.event_name == 'workflow_dispatch' || (
+        startsWith(github.event.workflow_run.head_commit.message, 'chore(ci): bump packages') &&
+        github.event.workflow_run.conclusion == 'success'
+      )
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 20
+
+    steps:
+      - uses: mongodb-js/devtools-shared/actions/setup-bot-token@main
+        id: app-token
+        with:
+          app-id: ${{ vars.DEVTOOLS_BOT_APP_ID }}
+          private-key: ${{ secrets.DEVTOOLS_BOT_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || 'main' }}
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: '0'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.15.0
+          cache: 'npm'
+
+      - name: Install npm
+        run: npm install -g npm@11.16.0
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Publish to npm
+        run: npm publish
+
+      - name: Publish tag
+        run: |
+          version="$(node -p 'require("./package.json").version')"
+          git tag -a "v${version}" -m "v${version}" || true
+          git push origin tag "v${version}"
