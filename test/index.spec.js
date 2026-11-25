@@ -1,6 +1,7 @@
 const { stdio } = require('stdio-mock');
 const { PassThrough } = require('stream');
 const assert = require('assert');
+const stripAnsi = require('strip-ansi');
 
 const repl = require('..');
 const memoizeStringTransformerMethod = require('../lib/memoize-string-transformer');
@@ -145,6 +146,66 @@ it('findMatchingBracket', () => {
   assert.equal(prettyRepl._findMatchingBracket('"(")', 1), -1);
   assert.equal(prettyRepl._findMatchingBracket('`${foo}`', 1), 6);
   assert.equal(prettyRepl._findMatchingBracket('(`${")"}`', 0), -1);
+});
+
+it('highlights a continuation-line bracket through the real refresh path', async () => {
+  const input = new PassThrough();
+  const output = new PassThrough();
+  output.isTTY = true;
+  output.columns = 80;
+  output.getColorDepth = () => 8;
+  let written = '';
+  output.setEncoding('utf8').on('data', chunk => {
+    written += chunk;
+  });
+  repl.start({
+    prompt: '> ',
+    input,
+    output: output,
+    terminal: true,
+    colorize: str => str.replace(/stats/g, '<c>stats</c>'),
+    colorizeMatchingBracket: bracket => `<b>${bracket}</b>`
+  });
+
+  input.write('db.getCollection(\n"stats"');
+  written = '';
+  input.write('\x1b[D');
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.match(
+    stripAnsi(written),
+    /(?:^|[\r\n])(?:\.\.\. |\| )<b>"<\/b><c>stats<\/c>"$/
+  );
+});
+
+it('highlights continuation-line brackets without shifting offsets', async () => {
+  const input = new PassThrough();
+  const output = new PassThrough();
+  output.isTTY = true;
+  output.columns = 80;
+  output.getColorDepth = () => 8;
+  let written = '';
+  output.setEncoding('utf8').on('data', chunk => {
+    written += chunk;
+  });
+  repl.start({
+    prompt: '> ',
+    input,
+    output: output,
+    terminal: true,
+    colorize: str => str,
+    colorizeMatchingBracket: bracket => `<b>${bracket}</b>`
+  });
+
+  input.write('db.getCollection("stats").aggregate([{$sort: {_id:-139m}},{$limit: 100},{}])');
+  written = '';
+  input.write('\x1b[D');
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(
+    stripAnsi(written),
+    '> db.getCollection("stats").aggregate<b>(</b>[{$sort: {_id:-139m}},{$limit: 100},{}])'
+  );
 });
 
 it('full pass-through test', (done) => {
